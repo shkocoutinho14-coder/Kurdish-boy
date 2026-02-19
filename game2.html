@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاری Imposter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #root { width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+```
+<script type="text/babel">
+    const { useState } = React;
+    
+    const Users = () => (
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+    );
+    
+    const Eye = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+    );
+    
+    const EyeOff = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+    );
+    
+    const Shuffle = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+    );
+    
+    const UserX = () => (
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="18" y1="8" x2="23" y2="13"></line>
+            <line x1="23" y1="8" x2="18" y2="13"></line>
+        </svg>
+    );
+    
+    const CheckCircle = () => (
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+    );
+
+    function ImposterGame() {
+        const [gamePhase, setGamePhase] = useState('setup');
+        const [playerCount, setPlayerCount] = useState(3);
+        const [playerNames, setPlayerNames] = useState(['', '', '']);
+        const [secretSentence, setSecretSentence] = useState('');
+        const [isSecretHidden, setIsSecretHidden] = useState(true);
+        const [imposterIndex, setImposterIndex] = useState(null);
+        const [currentPlayer, setCurrentPlayer] = useState(0);
+        const [responses, setResponses] = useState([]);
+        const [currentResponse, setCurrentResponse] = useState('');
+        const [votes, setVotes] = useState([]);
+        const [selectedVote, setSelectedVote] = useState(null);
+
+        const startGame = () => {
+            setGamePhase('names');
+        };
+
+        const confirmNames = () => {
+            const randomImposter = Math.floor(Math.random() * playerCount);
+            setImposterIndex(randomImposter);
+            setResponses(Array(playerCount).fill(''));
+            setVotes([]);
+            setGamePhase('roles');
+        };
+
+        const updatePlayerCount = (count) => {
+            setPlayerCount(count);
+            const newNames = Array(count).fill('').map((_, i) => 
+                playerNames[i] || ''
+            );
+            setPlayerNames(newNames);
+        };
+
+        const updatePlayerName = (index, name) => {
+            const newNames = [...playerNames];
+            newNames[index] = name;
+            setPlayerNames(newNames);
+        };
+
+        const viewRole = () => {
+            if (currentPlayer === playerCount - 1) {
+                setGamePhase('secret');
+                setCurrentPlayer(0);
+            } else {
+                setCurrentPlayer(currentPlayer + 1);
+            }
+        };
+
+        const startResponses = () => {
+            setGamePhase('responses');
+            setCurrentPlayer(0);
+        };
+
+        const submitResponse = () => {
+            if (currentResponse.trim()) {
+                const newResponses = [...responses];
+                newResponses[currentPlayer] = currentResponse.trim();
+                setResponses(newResponses);
+                setCurrentResponse('');
+                
+                if (currentPlayer === playerCount - 1) {
+                    setGamePhase('voting');
+                    setCurrentPlayer(0);
+                } else {
+                    setCurrentPlayer(currentPlayer + 1);
+                }
+            }
+        };
+
+        const submitVote = () => {
+            if (selectedVote !== null) {
+                setVotes([...votes, selectedVote]);
+                setSelectedVote(null);
+                
+                if (votes.length === playerCount - 1) {
+                    setGamePhase('results');
+                } else {
+                    setCurrentPlayer(currentPlayer + 1);
+                }
+            }
+        };
+
+        const resetGame = () => {
+            setGamePhase('setup');
+            setPlayerCount(3);
+            setPlayerNames(['', '', '']);
+            setSecretSentence('');
+            setIsSecretHidden(true);
+            setImposterIndex(null);
+            setCurrentPlayer(0);
+            setResponses([]);
+            setCurrentResponse('');
+            setVotes([]);
+            setSelectedVote(null);
+        };
+
+        const getMostVoted = () => {
+            const voteCounts = {};
+            votes.forEach(vote => {
+                voteCounts[vote] = (voteCounts[vote] || 0) + 1;
+            });
+            let maxVotes = 0;
+            let mostVoted = null;
+            Object.entries(voteCounts).forEach(([player, count]) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    mostVoted = parseInt(player);
+                }
+            });
+            return mostVoted;
+        };
+
+        const getPlayerName = (index) => {
+            return playerNames[index] || `یاریزان ${index + 1}`;
+        };
+
+        return (
+            <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(to bottom right, rgb(239, 68, 68), rgb(168, 85, 247), rgb(79, 70, 229))',
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <div style={{
+                    maxWidth: '672px',
+                    width: '100%',
+                    background: 'white',
+                    borderRadius: '24px',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                    padding: '32px'
+                }}>
+                    <h1 style={{
+                        fontSize: '36px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        marginBottom: '8px',
+                        background: 'linear-gradient(to right, rgb(220, 38, 38), rgb(147, 51, 234))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
+                        🕵️ یاری Imposter
+                    </h1>
+                    <p style={{
+                        textAlign: 'center',
+                        color: 'rgb(75, 85, 99)',
+                        marginBottom: '32px'
+                    }}>
+                        کێ ڕستە نهێنییەکە نازانێت؟
+                    </p>
+
+                    {gamePhase === 'setup' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(243, 232, 255), rgb(238, 242, 255))',
+                                padding: '24px',
+                                borderRadius: '16px'
+                            }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    color: 'rgb(55, 65, 81)',
+                                    marginBottom: '12px'
+                                }}>
+                                    ژمارەی یاریزانان:
+                                </label>
+                                <input
+                                    type="number"
+                                    min="3"
+                                    max="10"
+                                    value={playerCount}
+                                    onChange={(e) => updatePlayerCount(parseInt(e.target.value))}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        border: '2px solid rgb(216, 180, 254)',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(254, 226, 226), rgb(252, 231, 243))',
+                                padding: '24px',
+                                borderRadius: '16px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <label style={{ fontSize: '18px', fontWeight: '600', color: 'rgb(55, 65, 81)' }}>
+                                        ڕستە نهێنییەکە:
+                                    </label>
+                                    <button
+                                        onClick={() => setIsSecretHidden(!isSecretHidden)}
+                                        style={{
+                                            padding: '8px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        {isSecretHidden ? <EyeOff /> : <Eye />}
+                                    </button>
+                                </div>
+                                <textarea
+                                    value={secretSentence}
+                                    onChange={(e) => setSecretSentence(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        border: '2px solid rgb(252, 165, 165)',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        WebkitTextSecurity: isSecretHidden ? 'disc' : 'none',
+                                        fontFamily: isSecretHidden ? 'monospace' : 'inherit'
+                                    }}
+                                    rows="3"
+                                    placeholder="ڕستە نهێنییەکە لێرە بنووسە..."
+                                />
+                            </div>
+
+                            <button
+                                onClick={startGame}
+                                disabled={!secretSentence.trim() || playerCount < 3}
+                                style={{
+                                    width: '100%',
+                                    background: secretSentence.trim() && playerCount >= 3 ? 'linear-gradient(to right, rgb(220, 38, 38), rgb(147, 51, 234))' : 'rgb(209, 213, 219)',
+                                    color: 'white',
+                                    padding: '16px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '18px',
+                                    fontWeight: 'bold',
+                                    border: 'none',
+                                    cursor: secretSentence.trim() && playerCount >= 3 ? 'pointer' : 'not-allowed',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                }}
+                            >
+                                <Shuffle />
+                                دواتر: ناوی یاریزانەکان
+                            </button>
+                        </div>
+                    )}
+
+                    {gamePhase === 'names' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(239, 246, 255), rgb(238, 242, 255))',
+                                padding: '24px',
+                                borderRadius: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '24px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    👥 ناوی یاریزانەکان
+                                </h2>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                                    {Array.from({ length: playerCount }).map((_, index) => (
+                                        <div key={index}>
+                                            <label style={{
+                                                display: 'block',
+                                                fontSize: '14px',
+                                                fontWeight: '600',
+                                                color: 'rgb(55, 65, 81)',
+                                                marginBottom: '8px'
+                                            }}>
+                                                یاریزان {index + 1}:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={playerNames[index]}
+                                                onChange={(e) => updatePlayerName(index, e.target.value)}
+                                                placeholder={`ناوی یاریزان ${index + 1}`}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid rgb(165, 180, 252)',
+                                                    borderRadius: '12px',
+                                                    outline: 'none'
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <p style={{
+                                    fontSize: '14px',
+                                    color: 'rgb(75, 85, 99)',
+                                    textAlign: 'center',
+                                    marginBottom: '16px'
+                                }}>
+                                    (دەتوانیت بەتاڵی بهێڵیتەوە بۆ بەکارهێنانی ناوە پێشوەختەکان)
+                                </p>
+
+                                <button
+                                    onClick={confirmNames}
+                                    style={{
+                                        width: '100%',
+                                        background: 'linear-gradient(to right, rgb(79, 70, 229), rgb(147, 51, 234))',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    دەست پێکردنی یاری
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gamePhase === 'roles' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(239, 246, 255), rgb(238, 242, 255))',
+                                padding: '32px',
+                                borderRadius: '16px',
+                                textAlign: 'center'
+                            }}>
+                                <Users />
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    marginBottom: '16px',
+                                    marginTop: '16px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    {getPlayerName(currentPlayer)}
+                                </h2>
+                                <p style={{
+                                    fontSize: '18px',
+                                    color: 'rgb(75, 85, 99)',
+                                    marginBottom: '24px'
+                                }}>
+                                    ئامادەیت بزانیت ڕۆڵت چییە؟
+                                </p>
+                                
+                                <div style={{
+                                    background: 'white',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px'
+                                }}>
+                                    {currentPlayer === imposterIndex ? (
+                                        <div style={{ textAlign: 'center' }}>
+                                            <UserX />
+                                            <p style={{
+                                                fontSize: '28px',
+                                                fontWeight: 'bold',
+                                                color: 'rgb(220, 38, 38)',
+                                                marginTop: '16px',
+                                                marginBottom: '8px'
+                                            }}>
+                                                تۆ Imposter-ی!
+                                            </p>
+                                            <p style={{ color: 'rgb(75, 85, 99)' }}>
+                                                تۆ ڕستە نهێنییەکە نازانیت. هەوڵ بدە وا دەربکەویت کە دەیزانیت!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ textAlign: 'center' }}>
+                                            <CheckCircle />
+                                            <p style={{
+                                                fontSize: '28px',
+                                                fontWeight: 'bold',
+                                                color: 'rgb(22, 163, 74)',
+                                                marginTop: '16px',
+                                                marginBottom: '8px'
+                                            }}>
+                                                یاریزانی ئاسایی
+                                            </p>
+                                            <p style={{ color: 'rgb(75, 85, 99)' }}>
+                                                تۆ ڕستە نهێنییەکە دەزانیت. دواتر دەیبینیت.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={viewRole}
+                                    style={{
+                                        width: '100%',
+                                        background: 'linear-gradient(to right, rgb(79, 70, 229), rgb(147, 51, 234))',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    باشە، مۆبایلەکە بدە بە یاریزانی داهاتوو
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gamePhase === 'secret' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(254, 249, 195), rgb(254, 215, 170))',
+                                padding: '32px',
+                                borderRadius: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '24px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    🔒 ڕستە نهێنییەکە
+                                </h2>
+                                
+                                <div style={{
+                                    background: 'white',
+                                    padding: '32px',
+                                    borderRadius: '12px',
+                                    border: '4px solid rgb(253, 224, 71)',
+                                    marginBottom: '24px'
+                                }}>
+                                    <p style={{
+                                        fontSize: '24px',
+                                        color: 'rgb(31, 41, 55)',
+                                        textAlign: 'center',
+                                        lineHeight: '1.625'
+                                    }}>
+                                        {secretSentence}
+                                    </p>
+                                </div>
+
+                                <div style={{
+                                    background: 'rgb(254, 226, 226)',
+                                    border: '2px solid rgb(252, 165, 165)',
+                                    borderRadius: '12px',
+                                    padding: '16px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <p style={{
+                                        color: 'rgb(153, 27, 27)',
+                                        fontWeight: '600',
+                                        textAlign: 'center'
+                                    }}>
+                                        ⚠️ Imposter ئەم ڕستەیە نابینێت!
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={startResponses}
+                                    style={{
+                                        width: '100%',
+                                        background: 'linear-gradient(to right, rgb(234, 88, 12), rgb(220, 38, 38))',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    ئێستا با هەموو کەس وەڵامی خۆی بنووسێت
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gamePhase === 'responses' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(236, 253, 245), rgb(240, 253, 250))',
+                                padding: '32px',
+                                borderRadius: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '16px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    {getPlayerName(currentPlayer)}
+                                </h2>
+                                
+                                <div style={{
+                                    background: 'white',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <p style={{
+                                        color: 'rgb(55, 65, 81)',
+                                        textAlign: 'center',
+                                        marginBottom: '16px'
+                                    }}>
+                                        شتێک لەسەر ڕستە نهێنییەکە بنووسە:
+                                    </p>
+                                    <textarea
+                                        value={currentResponse}
+                                        onChange={(e) => setCurrentResponse(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '16px',
+                                            border: '2px solid rgb(153, 246, 228)',
+                                            borderRadius: '12px',
+                                            fontSize: '18px',
+                                            outline: 'none',
+                                            resize: 'none'
+                                        }}
+                                        rows="4"
+                                        placeholder="وەڵامەکەت لێرە بنووسە..."
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={submitResponse}
+                                    disabled={!currentResponse.trim()}
+                                    style={{
+                                        width: '100%',
+                                        background: currentResponse.trim() ? 'linear-gradient(to right, rgb(20, 184, 166), rgb(34, 197, 94))' : 'rgb(209, 213, 219)',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: currentResponse.trim() ? 'pointer' : 'not-allowed',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    ناردنی وەڵام
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gamePhase === 'voting' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(243, 232, 255), rgb(252, 231, 243))',
+                                padding: '32px',
+                                borderRadius: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '16px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    {getPlayerName(currentPlayer)} - دەنگ بدە!
+                                </h2>
+                                
+                                <p style={{
+                                    textAlign: 'center',
+                                    color: 'rgb(75, 85, 99)',
+                                    marginBottom: '24px'
+                                }}>
+                                    بە پێی وەڵامەکان، کێ پێت وایە Imposter-ە؟
+                                </p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                                    {responses.map((response, index) => (
+                                        <div
+                                            key={index}
+                                            style={{
+                                                background: 'white',
+                                                padding: '20px',
+                                                borderRadius: '12px',
+                                                border: '2px solid rgb(233, 213, 255)'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                                                <span style={{
+                                                    flexShrink: 0,
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    background: 'linear-gradient(to bottom right, rgb(168, 85, 247), rgb(236, 72, 153))',
+                                                    color: 'white',
+                                                    borderRadius: '50%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '14px'
+                                                }}>
+                                                    {index + 1}
+                                                </span>
+                                                <div style={{ flex: 1 }}>
+                                                    <p style={{
+                                                        fontWeight: '600',
+                                                        color: 'rgb(31, 41, 55)',
+                                                        marginBottom: '4px'
+                                                    }}>
+                                                        {getPlayerName(index)}
+                                                    </p>
+                                                    <p style={{ color: 'rgb(55, 65, 81)' }}>{response}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            {index !== currentPlayer && (
+                                                <button
+                                                    onClick={() => setSelectedVote(index)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '8px',
+                                                        fontWeight: '600',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        background: selectedVote === index ? 'linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119))' : 'rgb(243, 244, 246)',
+                                                        color: selectedVote === index ? 'white' : 'rgb(55, 65, 81)'
+                                                    }}
+                                                >
+                                                    {selectedVote === index ? '✓ هەڵبژێردراوە' : 'دەنگ بدە'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    onClick={submitVote}
+                                    disabled={selectedVote === null}
+                                    style={{
+                                        width: '100%',
+                                        background: selectedVote !== null ? 'linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119))' : 'rgb(209, 213, 219)',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: selectedVote !== null ? 'pointer' : 'not-allowed',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    دڵنیابوون لە دەنگ
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {gamePhase === 'results' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{
+                                background: 'linear-gradient(to right, rgb(254, 249, 195), rgb(254, 215, 170))',
+                                padding: '32px',
+                                borderRadius: '16px'
+                            }}>
+                                <h2 style={{
+                                    fontSize: '28px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '24px',
+                                    color: 'rgb(31, 41, 55)'
+                                }}>
+                                    🎉 ئەنجامەکان
+                                </h2>
+
+                                <div style={{
+                                    background: 'white',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px',
+                                    border: '4px solid rgb(251, 191, 36)'
+                                }}>
+                                    <p style={{
+                                        textAlign: 'center',
+                                        color: 'rgb(55, 65, 81)',
+                                        marginBottom: '8px',
+                                        fontSize: '18px'
+                                    }}>
+                                        Imposter ڕاستەقینە:
+                                    </p>
+                                    <p style={{
+                                        fontSize: '32px',
+                                        fontWeight: 'bold',
+                                        textAlign: 'center',
+                                        color: 'rgb(220, 38, 38)',
+                                        marginBottom: '16px'
+                                    }}>
+                                        {getPlayerName(imposterIndex)}
+                                    </p>
+                                    
+                                    <div style={{
+                                        borderTop: '2px solid rgb(229, 231, 235)',
+                                        paddingTop: '16px',
+                                        marginTop: '16px'
+                                    }}>
+                                        <p style={{
+                                            textAlign: 'center',
+                                            color: 'rgb(55, 65, 81)',
+                                            marginBottom: '8px',
+                                            fontSize: '18px'
+                                        }}>
+                                            زۆرترین دەنگیان پێداوە:
+                                        </p>
+                                        <p style={{
+                                            fontSize: '28px',
+                                            fontWeight: 'bold',
+                                            textAlign: 'center',
+                                            color: 'rgb(147, 51, 234)'
+                                        }}>
+                                            {getPlayerName(getMostVoted())}
+                                        </p>
+                                    </div>
+
+                                    {getMostVoted() === imposterIndex ? (
+                                        <div style={{
+                                            marginTop: '24px',
+                                            background: 'rgb(220, 252, 231)',
+                                            border: '2px solid rgb(134, 239, 172)',
+                                            borderRadius: '12px',
+                                            padding: '16px'
+                                        }}>
+                                            <p style={{
+                                                color: 'rgb(22, 101, 52)',
+                                                fontWeight: 'bold',
+                                                textAlign: 'center',
+                                                fontSize: '20px'
+                                            }}>
+                                                ✓ یاریزانەکان براوەتەوە!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            marginTop: '24px',
+                                            background: 'rgb(254, 226, 226)',
+                                            border: '2px solid rgb(252, 165, 165)',
+                                            borderRadius: '12px',
+                                            padding: '16px'
+                                        }}>
+                                            <p style={{
+                                                color: 'rgb(153, 27, 27)',
+                                                fontWeight: 'bold',
+                                                textAlign: 'center',
+                                                fontSize: '20px'
+                                            }}>
+                                                ✗ Imposter بردیەوە!
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{
+                                    background: 'rgb(249, 250, 251)',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <h3 style={{
+                                        fontWeight: 'bold',
+                                        color: 'rgb(55, 65, 81)',
+                                        marginBottom: '16px',
+                                        textAlign: 'center'
+                                    }}>
+                                        هەموو وەڵامەکان:
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {responses.map((response, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    padding: '16px',
+                                                    borderRadius: '8px',
+                                                    background: index === imposterIndex ? 'rgb(254, 226, 226)' : 'white',
+                                                    border: index === imposterIndex ? '2px solid rgb(252, 165, 165)' : '2px solid rgb(229, 231, 235)'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    <span style={{
+                                                        fontWeight: 'bold',
+                                                        color: 'rgb(55, 65, 81)'
+                                                    }}>
+                                                        {getPlayerName(index)}
+                                                    </span>
+                                                    {index === imposterIndex && (
+                                                        <span style={{
+                                                            color: 'rgb(220, 38, 38)',
+                                                            fontWeight: 'bold'
+                                                        }}>
+                                                            (Imposter)
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p style={{ color: 'rgb(55, 65, 81)' }}>{response}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={resetGame}
+                                    style={{
+                                        width: '100%',
+                                        background: 'linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119))',
+                                        color: 'white',
+                                        padding: '16px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '18px',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                >
+                                    یاری نوێ دەست پێ بکە
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    ReactDOM.render(<ImposterGame />, document.getElementById('root'));
+</script>
+```
+
+</body>
+</html>
