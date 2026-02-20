@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاری بخەمڵێنە</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, rgb(239, 68, 68), rgb(168, 85, 247), rgb(79, 70, 229));
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .container {
+            max-width: 672px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, rgb(220, 38, 38), rgb(147, 51, 234));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgb(75, 85, 99);
+            margin-bottom: 32px;
+        }
+        .box {
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        label {
+            font-size: 18px;
+            font-weight: 600;
+            color: rgb(55, 65, 81);
+            display: block;
+            margin-bottom: 12px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgb(216, 180, 254);
+            border-radius: 12px;
+            font-size: 18px;
+            outline: none;
+            font-family: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary { background: linear-gradient(to right, rgb(220, 38, 38), rgb(147, 51, 234)); color: white; }
+        .btn-success { background: linear-gradient(to right, rgb(34, 197, 94), rgb(20, 184, 166)); color: white; }
+        .btn-secondary { background: linear-gradient(to right, rgb(79, 70, 229), rgb(147, 51, 234)); color: white; }
+        .btn-danger { background: linear-gradient(to right, rgb(239, 68, 68), rgb(220, 38, 38)); color: white; }
+        .btn-reveal { 
+            background: linear-gradient(to right, rgb(234, 179, 8), rgb(245, 158, 11)); 
+            color: white;
+            padding: 24px;
+            font-size: 20px;
+        }
+        .hidden-input { -webkit-text-security: disc; font-family: monospace; }
+        .role-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .round-badge {
+            display: inline-block;
+            background: linear-gradient(to right, rgb(59, 130, 246), rgb(99, 102, 241));
+            color: white;
+            padding: 8px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        .history-item {
+            background: rgb(249, 250, 251);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 2px solid rgb(229, 231, 235);
+        }
+        .imposter-badge {
+            display: inline-block;
+            background: rgb(220, 38, 38);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .hidden-role {
+            background: rgb(249, 250, 251);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕵️ یاری بخەمڵێنە</h1>
+        <p class="subtitle">کێ ڕستە نهێنییەکە نازانێت؟</p>
+        <div id="app"></div>
+    </div>
+
+```
+<script>
+    let state = {
+        phase: 'setup',
+        playerCount: 3,
+        playerNames: ['', '', ''],
+        currentRound: 0,
+        rounds: [],
+        secretSentence: '',
+        isSecretHidden: true,
+        imposterIndex: null,
+        currentPlayer: 0,
+        roleRevealed: false,
+        secretShown: false,
+        responses: [],
+        currentResponse: '',
+        votes: [],
+        selectedVote: null
+    };
+
+    function getPlayerName(index) {
+        return state.playerNames[index] || `یاریزان ${index + 1}`;
+    }
+
+    function startGame() {
+        state.phase = 'names';
+        render();
+    }
+
+    function updatePlayerCount(count) {
+        state.playerCount = count;
+        state.playerNames = Array(count).fill('').map((_, i) => state.playerNames[i] || '');
+        render();
+    }
+
+    function updatePlayerName(index, name) {
+        state.playerNames[index] = name;
+    }
+
+    function confirmNames() {
+        state.phase = 'secret';
+        render();
+    }
+
+    function startRound() {
+        if (!state.secretSentence.trim()) {
+            alert('تکایە ڕستەیەک بنووسە!');
+            return;
+        }
+        state.imposterIndex = Math.floor(Math.random() * state.playerCount);
+        state.responses = Array(state.playerCount).fill('');
+        state.votes = [];
+        state.currentPlayer = 0;
+        state.roleRevealed = false;
+        state.secretShown = false;
+        state.phase = 'roles';
+        render();
+    }
+
+    function revealRole() {
+        state.roleRevealed = true;
+        render();
+    }
+
+    function nextPlayer() {
+        if (state.currentPlayer === state.playerCount - 1) {
+            state.phase = 'showSecret';
+            state.currentPlayer = 0;
+            state.secretShown = false;
+        } else {
+            state.currentPlayer++;
+            state.roleRevealed = false;
+        }
+        render();
+    }
+
+    function revealSecret() {
+        state.secretShown = true;
+        render();
+    }
+
+    function nextSecretViewer() {
+        if (state.currentPlayer >= state.playerCount - 1) {
+            state.phase = 'responses';
+            state.currentPlayer = 0;
+        } else {
+            state.currentPlayer++;
+            state.secretShown = false;
+        }
+        render();
+    }
+
+    function startResponses() {
+        state.phase = 'responses';
+        state.currentPlayer = 0;
+        render();
+    }
+
+    function submitResponse() {
+        if (!state.currentResponse.trim()) return;
+        state.responses[state.currentPlayer] = state.currentResponse.trim();
+        state.currentResponse = '';
+        
+        if (state.currentPlayer === state.playerCount - 1) {
+            state.phase = 'voting';
+            state.currentPlayer = 0;
+        } else {
+            state.currentPlayer++;
+        }
+        render();
+    }
+
+    function submitVote() {
+        if (state.selectedVote === null) return;
+        state.votes.push(state.selectedVote);
+        state.selectedVote = null;
+        
+        if (state.votes.length === state.playerCount - 1) {
+            saveRoundResults();
+            state.phase = 'results';
+        } else {
+            state.currentPlayer++;
+        }
+        render();
+    }
+
+    function saveRoundResults() {
+        const voteCounts = {};
+        state.votes.forEach(vote => {
+            voteCounts[vote] = (voteCounts[vote] || 0) + 1;
+        });
+        let maxVotes = 0;
+        let mostVoted = null;
+        Object.entries(voteCounts).forEach(([player, count]) => {
+            if (count > maxVotes) {
+                maxVotes = count;
+                mostVoted = parseInt(player);
+            }
+        });
+
+        state.rounds.push({
+            roundNumber: state.currentRound + 1,
+            secret: state.secretSentence,
+            imposter: state.imposterIndex,
+            mostVoted: mostVoted,
+            success: mostVoted === state.imposterIndex,
+            responses: [...state.responses],
+            votes: [...state.votes]
+        });
+        state.currentRound++;
+    }
+
+    function newRound() {
+        state.secretSentence = '';
+        state.isSecretHidden = true;
+        state.phase = 'secret';
+        render();
+    }
+
+    function reset() {
+        state = {
+            phase: 'setup',
+            playerCount: 3,
+            playerNames: ['', '', ''],
+            currentRound: 0,
+            rounds: [],
+            secretSentence: '',
+            isSecretHidden: true,
+            imposterIndex: null,
+            currentPlayer: 0,
+            roleRevealed: false,
+            secretShown: false,
+            responses: [],
+            currentResponse: '',
+            votes: [],
+            selectedVote: null
+        };
+        render();
+    }
+
+    function render() {
+        const app = document.getElementById('app');
+        
+        if (state.phase === 'setup') {
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(243,232,255),rgb(238,242,255));">
+                    <label>ژمارەی یاریزانان:</label>
+                    <input type="number" min="3" max="10" value="${state.playerCount}" 
+                        onchange="updatePlayerCount(parseInt(this.value))">
+                </div>
+                <button class="btn-primary" onclick="startGame()">دواتر: ناوی یاریزانەکان</button>
+            `;
+        }
+        else if (state.phase === 'names') {
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(239,246,255),rgb(238,242,255));">
+                    <h2 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:24px;color:rgb(31,41,55);">
+                        👥 ناوی یاریزانەکان
+                    </h2>
+                    ${Array.from({length: state.playerCount}).map((_, i) => `
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:14px;">یاریزان ${i + 1}:</label>
+                            <input type="text" value="${state.playerNames[i]}" 
+                                placeholder="ناوی یاریزان ${i + 1}"
+                                onchange="updatePlayerName(${i}, this.value)">
+                        </div>
+                    `).join('')}
+                    <p style="font-size:14px;color:rgb(75,85,99);text-align:center;margin:16px 0;">
+                        (دەتوانیت بەتاڵی بهێڵیتەوە بۆ بەکارهێنانی ناوە پێشوەختەکان)
+                    </p>
+                </div>
+                <button class="btn-secondary" onclick="confirmNames()">دەست پێکردنی یاری</button>
+            `;
+        }
+        else if (state.phase === 'secret') {
+            app.innerHTML = `
+                <div style="background:linear-gradient(to right,rgb(254,249,195),rgb(254,215,170));padding:24px;border-radius:16px;margin-bottom:16px;">
+                    <div class="round-badge">ڕاوندی ${state.currentRound + 1}</div>
+                    <h2 style="font-size:24px;font-weight:bold;margin-bottom:16px;">🔒 ڕستە نهێنییەکە</h2>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <label style="margin:0;">ڕستە نهێنییەکە:</label>
+                        <button onclick="state.isSecretHidden=!state.isSecretHidden;render()" 
+                            style="background:transparent;border:none;cursor:pointer;width:auto;padding:8px;">
+                            ${state.isSecretHidden ? '👁️' : '👁️‍🗨️'}
+                        </button>
+                    </div>
+                    <textarea rows="3" placeholder="ڕستە نهێنییەکە لێرە بنووسە..."
+                        class="${state.isSecretHidden ? 'hidden-input' : ''}"
+                        oninput="state.secretSentence=this.value">${state.secretSentence}</textarea>
+                </div>
+                <button class="btn-primary" onclick="startRound()">دەست پێکردنی ڕاوند</button>
+                ${state.rounds.length > 0 ? '<button class="btn-danger" onclick="reset()" style="margin-top:12px;">یاری نوێ (سڕینەوەی هەموو شت)</button>' : ''}
+            `;
+        }
+        else if (state.phase === 'roles') {
+            const isImposter = state.currentPlayer === state.imposterIndex;
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(239,246,255),rgb(238,242,255));text-align:center;">
+                    <div style="font-size:64px;margin-bottom:16px;">👥</div>
+                    <h2 style="font-size:28px;font-weight:bold;margin-bottom:24px;color:rgb(31,41,55);">
+                        ${getPlayerName(state.currentPlayer)}
+                    </h2>
+                    
+                    ${!state.roleRevealed ? `
+                        <div class="hidden-role">
+                            <p style="font-size:18px;color:rgb(75,85,99);margin-bottom:24px;">
+                                ئامادەیت بزانیت ڕۆڵت چییە؟
+                            </p>
+                            <p style="font-size:16px;color:rgb(107,114,128);margin-bottom:24px;">
+                                ⚠️ کەسانی تر نەبینن!
+                            </p>
+                            <button class="btn-reveal" onclick="revealRole()">
+                                🔓 کلیک بکە بۆ بینینی ڕۆڵەکەت
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="role-card">
+                            ${isImposter ? `
+                                <div style="font-size:80px;margin-bottom:16px;">❌</div>
+                                <p style="font-size:28px;font-weight:bold;color:rgb(220,38,38);margin-bottom:8px;">
+                                    تۆ Imposter-ی!
+                                </p>
+                                <p style="color:rgb(75,85,99);margin-bottom:16px;">
+                                    تۆ ڕستە نهێنییەکە نازانیت.<br>
+                                    هەوڵ بدە وا دەربکەویت کە دەیزانیت!
+                                </p>
+                                <p style="font-size:14px;color:rgb(107,114,128);background:rgb(254,226,226);padding:12px;border-radius:8px;">
+                                    💡 تۆ ڕستەکە نابینیت - ڕاستەوخۆ دەچیتە بەشی نووسینی وەڵام
+                                </p>
+                            ` : `
+                                <div style="font-size:80px;margin-bottom:16px;">✅</div>
+                                <p style="font-size:28px;font-weight:bold;color:rgb(22,163,74);margin-bottom:8px;">
+                                    تۆ یاریزانی پارێزراویت!
+                                </p>
+                                <p style="color:rgb(75,85,99);margin-bottom:16px;">
+                                    تۆ ڕستە نهێنییەکە دەزانیت.<br>
+                                    دواتر پیشانت دەدرێت.
+                                </p>
+                                <p style="font-size:14px;color:rgb(107,114,128);background:rgb(220,252,231);padding:12px;border-radius:8px;">
+                                    💡 لە هەنگاوی داهاتوودا ڕستەکە دەبینیت
+                                </p>
+                            `}
+                        </div>
+                        
+                        <button class="btn-secondary" onclick="nextPlayer()">
+                            ${state.currentPlayer === state.playerCount - 1 ? 'دواتر: پیشاندانی ڕستە نهێنییەکە' : 'باشە، مۆبایلەکە بدە بە یاریزانی داهاتوو'}
+                        </button>
+                    `}
+                </div>
+            `;
+        }
+        else if (state.phase === 'showSecret') {
+            const fakeSentences = [
+                "شێر گیانلەبەرترین حەیوانە",
+                "قسەیەکی زۆر جوان هەیە دەڵێت: مرۆڤ کە مرد بەرد لەجێی خۆی سەنگینە",
+                "٢+٢=١",
+                "شێرەکانی وڵاتتان مەکوژن، سەگی دوژمنان دەتانخۆن",
+                "تۆ ئیمپۆستەری لەلەلا",
+                "بتبینم شێرە",
+                "تۆ زیرەکیت ئەیزانی",
+                "فەوتام بەقورئان فەوتام",
+                "برام گیان ئیمپۆستەریش ناخۆشە ئەزانی",
+                "سەیری دەمووچاویان بکە دەیزانی",
+                "حاسەی شەشت بەکاربێنە"
+            ];
+            
+            const isImposter = state.currentPlayer === state.imposterIndex;
+            const displaySentence = isImposter 
+                ? fakeSentences[Math.floor(Math.random() * fakeSentences.length)]
+                : state.secretSentence;
+            const sentenceLength = displaySentence.length;
+            const fontSize = sentenceLength > 40 ? '18px' : '24px';
+            
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(254,249,195),rgb(254,215,170));text-align:center;">
+                    <h2 style="font-size:24px;font-weight:bold;margin-bottom:24px;color:rgb(31,41,55);">
+                        ${getPlayerName(state.currentPlayer)}
+                    </h2>
+                    
+                    ${!state.secretShown ? `
+                        <div class="hidden-role">
+                            <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+                            <p style="font-size:18px;color:rgb(75,85,99);margin-bottom:24px;">
+                                ئێستا ڕستە نهێنییەکە دەبینیت
+                            </p>
+                            <p style="font-size:16px;color:rgb(107,114,128);margin-bottom:24px;">
+                                ⚠️ کەسانی تر نەبینن!
+                            </p>
+                            <button class="btn-reveal" onclick="revealSecret()">
+                                🔓 کلیک بکە بۆ بینینی ڕستەکە
+                            </button>
+                        </div>
+                    ` : `
+                        ${isImposter ? `
+                            <div style="background:rgb(254,226,226);padding:24px;border-radius:12px;border:3px solid rgb(252,165,165);margin-bottom:16px;">
+                                <p style="font-size:20px;color:rgb(153,27,27);font-weight:bold;margin-bottom:12px;">
+                                    تۆ Imposter-ی! 🕵️
+                                </p>
+                            </div>
+                        ` : ''}
+                        <div style="background:white;padding:32px;border-radius:12px;border:4px solid rgb(253,224,71);margin-bottom:24px;">
+                            <p style="font-size:14px;color:rgb(75,85,99);margin-bottom:8px;">ڕستە نهێنییەکە:</p>
+                            <p style="font-size:${fontSize};color:rgb(31,41,55);line-height:1.6;font-weight:600;">
+                                ${displaySentence}
+                            </p>
+                        </div>
+                        ${isImposter ? `
+                            <div style="background:rgb(254,249,195);border:2px solid rgb(251,191,36);border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p style="color:rgb(120,53,15);font-weight:600;text-align:center;font-size:14px;">
+                                    ⚠️ ئەمە ڕستە ڕاستەقینەکە نییە - تەنها گاڵتەیەکە!<br>
+                                    هەوڵ بدە وەک ئەوانی تر وانابکە 😏
+                                </p>
+                            </div>
+                        ` : `
+                            <div style="background:rgb(220,252,231);border:2px solid rgb(134,239,172);border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p style="color:rgb(22,101,52);font-weight:600;text-align:center;">
+                                    ✓ تۆ یاریزانی پارێزراویت - ئەم ڕستەیە لە بیرت بێت!
+                                </p>
+                            </div>
+                        `}
+                        ${(() => {
+                            let hasMore = state.currentPlayer < state.playerCount - 1;
+                            return hasMore 
+                                ? '<button class="btn-secondary" onclick="nextSecretViewer()">مۆبایلەکە بدە بە یاریزانی داهاتوو</button>'
+                                : '<button class="btn-primary" onclick="startResponses()">ئێستا با هەموو کەس وەڵامی خۆی بنووسێت</button>';
+                        })()}
+                    `}
+                </div>
+            `;
+        }
+        else if (state.phase === 'responses') {
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(236,253,245),rgb(240,253,250));">
+                    <h2 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:16px;">
+                        ${getPlayerName(state.currentPlayer)}
+                    </h2>
+                    <div style="background:white;padding:24px;border-radius:12px;margin-bottom:24px;">
+                        <p style="text-align:center;margin-bottom:16px;">شتێک لەسەر ڕستە نهێنییەکە بنووسە:</p>
+                        <textarea rows="4" placeholder="وەڵامەکەت لێرە بنووسە..."
+                            oninput="state.currentResponse=this.value">${state.currentResponse}</textarea>
+                    </div>
+                    <button class="btn-success" onclick="submitResponse()">ناردنی وەڵام</button>
+                </div>
+            `;
+        }
+        else if (state.phase === 'voting') {
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(243,232,255),rgb(252,231,243));">
+                    <h2 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:16px;">
+                        ${getPlayerName(state.currentPlayer)} - دەنگ بدە!
+                    </h2>
+                    <p style="text-align:center;margin-bottom:24px;">بە پێی وەڵامەکان، کێ پێت وایە Imposter-ە؟</p>
+                    
+                    ${state.responses.map((response, index) => `
+                        <div style="background:white;padding:20px;border-radius:12px;border:2px solid rgb(233,213,255);margin-bottom:12px;">
+                            <div style="margin-bottom:12px;">
+                                <span style="font-weight:600;color:rgb(31,41,55);">${getPlayerName(index)}</span>
+                                <p style="color:rgb(55,65,81);margin-top:4px;">${response}</p>
+                            </div>
+                            ${index !== state.currentPlayer ? `
+                                <button onclick="state.selectedVote=${index};render()"
+                                    style="width:100%;padding:8px 16px;border-radius:8px;font-weight:600;border:none;cursor:pointer;
+                                    background:${state.selectedVote === index ? 'linear-gradient(to right,rgb(147,51,234),rgb(219,39,119))' : 'rgb(243,244,246)'};
+                                    color:${state.selectedVote === index ? 'white' : 'rgb(55,65,81)'};">
+                                    ${state.selectedVote === index ? '✓ هەڵبژێردراوە' : 'دەنگ بدە'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                    
+                    <button class="btn-primary" onclick="submitVote()" ${state.selectedVote === null ? 'disabled style="opacity:0.5"' : ''}>
+                        دڵنیابوون لە دەنگ
+                    </button>
+                </div>
+            `;
+        }
+        else if (state.phase === 'results') {
+            const currentRound = state.rounds[state.rounds.length - 1];
+            app.innerHTML = `
+                <div class="box" style="background:linear-gradient(to right,rgb(254,249,195),rgb(254,215,170));">
+                    <h2 style="font-size:28px;font-weight:bold;text-align:center;margin-bottom:24px;">
+                        🎉 ئەنجامی ڕاوندی ${currentRound.roundNumber}
+                    </h2>
+                    
+                    <div style="background:white;padding:24px;border-radius:12px;border:4px solid rgb(251,191,36);margin-bottom:24px;">
+                        <p style="text-align:center;margin-bottom:8px;font-size:18px;">Imposter ڕاستەقینە:</p>
+                        <p style="font-size:32px;font-weight:bold;text-align:center;color:rgb(220,38,38);margin-bottom:16px;">
+                            ${getPlayerName(currentRound.imposter)}
+                        </p>
+                        <div style="border-top:2px solid rgb(229,231,235);padding-top:16px;margin-top:16px;">
+                            <p style="text-align:center;margin-bottom:8px;font-size:18px;">زۆرترین دەنگیان پێداوە:</p>
+                            <p style="font-size:28px;font-weight:bold;text-align:center;color:rgb(147,51,234);">
+                                ${getPlayerName(currentRound.mostVoted)}
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top:24px;padding:16px;border-radius:12px;
+                            background:${currentRound.success ? 'rgb(220,252,231)' : 'rgb(254,226,226)'};
+                            border:2px solid ${currentRound.success ? 'rgb(134,239,172)' : 'rgb(252,165,165)'};">
+                            <p style="font-weight:bold;text-align:center;font-size:20px;
+                                color:${currentRound.success ? 'rgb(22,101,52)' : 'rgb(153,27,27)'};">
+                                ${currentRound.success ? '✓ یاریزانەکان براوەتەوە!' : '✗ Imposter بردیەوە!'}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    ${state.rounds.length > 1 ? `
+                        <div style="background:rgb(249,250,251);padding:20px;border-radius:12px;margin-bottom:24px;">
+                            <h3 style="font-weight:bold;margin-bottom:16px;text-align:center;">📊 مێژووی ڕاوندەکان</h3>
+                            ${state.rounds.map(round => `
+                                <div class="history-item">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                        <strong>ڕاوندی ${round.roundNumber}</strong>
+                                        ${round.success ? '<span style="color:rgb(22,163,74);">✓ براوەتەوە</span>' : '<span style="color:rgb(220,38,38);">✗ شکستی هێنا</span>'}
+                                    </div>
+                                    <p style="font-size:14px;color:rgb(75,85,99);margin-bottom:4px;">
+                                        <span class="imposter-badge">Imposter</span>
+                                        ${getPlayerName(round.imposter)}
+                                    </p>
+                                    <p style="font-size:13px;color:rgb(107,114,128);">ڕستە: ${round.secret}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <button class="btn-success" onclick="newRound()">ڕاوندی نوێ</button>
+                    <button class="btn-danger" onclick="reset()" style="margin-top:12px;">یاری نوێ (سڕینەوەی هەموو شت)</button>
+                </div>
+            `;
+        }
+    }
+
+    render();
+</script>
+```
+
+</body>
+</html>
