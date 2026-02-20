@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاریە کوردییەکان</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 30px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 50px;
+        }
+        .games {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .game-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: block;
+        }
+        .game-button:hover {
+            transform: translateY(-5px);
+        }
+        .game-button.game1 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .game-button.game2 {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .emoji {
+            font-size: 40px;
+            margin-left: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 یاریە کوردییەکان</h1>
+        <p>یاریەکەت هەڵبژێرە!</p>
+
+```
+    <div class="games">
+        <a href="offline-game1.html" class="game-button game1">
+            <span class="emoji">🔒</span>
+            یاری ڕستە نهێنییەکان
+        </a>
+        
+        <a href="offline-game2.html" class="game-button game2">
+            <span class="emoji">🕵️</span>
+            یاری بخەمڵێنە
+        </a>
+    </div>
+</div>
+```
+
+</body>
+</html>
