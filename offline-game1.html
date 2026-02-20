@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاری ڕستە نهێنییەکان</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, rgb(168, 85, 247), rgb(236, 72, 153), rgb(251, 146, 60));
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .container {
+            max-width: 672px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgb(75, 85, 99);
+            margin-bottom: 32px;
+        }
+        .box {
+            background: linear-gradient(to right, rgb(243, 232, 255), rgb(252, 231, 243));
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        label {
+            font-size: 18px;
+            font-weight: 600;
+            color: rgb(55, 65, 81);
+            display: block;
+            margin-bottom: 12px;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgb(216, 180, 254);
+            border-radius: 12px;
+            font-size: 18px;
+            outline: none;
+            font-family: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119));
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(to right, rgb(34, 197, 94), rgb(20, 184, 166));
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(to right, rgb(59, 130, 246), rgb(99, 102, 241));
+            color: white;
+        }
+        .sentence-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid rgb(153, 246, 228);
+            margin-bottom: 16px;
+        }
+        .sentence-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(to bottom right, rgb(168, 85, 247), rgb(236, 72, 153));
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+        .hidden-input {
+            -webkit-text-security: disc;
+            font-family: monospace;
+        }
+        .slide-card {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            border: 4px solid rgb(165, 180, 252);
+            max-width: 576px;
+            margin: 0 auto;
+        }
+        .slide-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(to bottom right, rgb(59, 130, 246), rgb(99, 102, 241));
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 20px;
+            margin-left: 16px;
+        }
+        .counter {
+            display: inline-block;
+            background: linear-gradient(to right, rgb(59, 130, 246), rgb(99, 102, 241));
+            color: white;
+            padding: 8px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .back-btn {
+            background: rgb(75, 85, 99);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>یاری ڕستە نهێنییەکان</h1>
+        <p class="subtitle">هەرکەسێک ڕستەیەک بنووسێت بەبێ ئەوەی کەسانی تر ببینن!</p>
+
+```
+    <div id="app"></div>
+</div>
+
+<script>
+    let sentences = [];
+    let currentInput = '';
+    let isHidden = true;
+    let showResults = false;
+    let slideMode = false;
+    let currentSlide = 0;
+
+    function render() {
+        const app = document.getElementById('app');
+        
+        if (!showResults) {
+            app.innerHTML = `
+                <div class="box">
+                    <label>
+                        ڕستەکەت بنووسە:
+                        <button onclick="toggleHidden()" style="background:transparent;border:none;cursor:pointer;width:auto;padding:8px;margin:0 0 0 8px;">
+                            ${isHidden ? '👁️' : '👁️‍🗨️'}
+                        </button>
+                    </label>
+                    <textarea id="input" rows="3" placeholder="ڕستەکەت لێرە بنووسە..." 
+                        class="${isHidden ? 'hidden-input' : ''}"
+                        oninput="currentInput=this.value"></textarea>
+                    <button class="btn-primary" onclick="addSentence()">زیادکردنی ڕستە</button>
+                </div>
+                
+                <div style="background:rgb(249,250,251);padding:24px;border-radius:16px;">
+                    <h2 style="font-size:20px;font-weight:bold;color:rgb(55,65,81);margin-bottom:16px;">
+                        ژمارەی ڕستەکان: ${sentences.length}
+                    </h2>
+                    ${sentences.map((s, i) => `
+                        <div style="background:white;padding:16px;border-radius:8px;border:2px solid rgb(229,231,235);margin-bottom:8px;">
+                            <p style="color:rgb(209,213,219);font-family:monospace;">••••••••••••••••</p>
+                        </div>
+                    `).join('')}
+                    ${sentences.length >= 2 ? '<button class="btn-success" onclick="shuffle()">پیشاندانی ڕستەکان بە شێوەیەکی تێکەڵ</button>' : ''}
+                </div>
+            `;
+            if (currentInput) document.getElementById('input').value = currentInput;
+        } else if (!slideMode) {
+            app.innerHTML = `
+                <div style="background:linear-gradient(to right,rgb(236,253,245),rgb(240,253,250));padding:24px;border-radius:16px;margin-bottom:24px;">
+                    <h2 style="font-size:24px;font-weight:bold;text-align:center;margin-bottom:24px;color:rgb(31,41,55);">
+                        ڕستە نهێنییەکان (تێکەڵکراوە) 🎭
+                    </h2>
+                    ${sentences.map((s, i) => `
+                        <div class="sentence-card">
+                            <span class="sentence-number">${i + 1}</span>
+                            <span style="font-size:18px;color:rgb(55,65,81);">${s}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn-secondary" onclick="slideMode=true;render()">خوێندنەوەی یەک یەک</button>
+                <button class="btn-primary" onclick="reset()">یاری نوێ</button>
+            `;
+        } else {
+            app.innerHTML = `
+                <div style="background:linear-gradient(to right,rgb(239,246,255),rgb(238,242,255));padding:32px;border-radius:16px;margin-bottom:24px;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <span class="counter">${currentSlide + 1} / ${sentences.length}</span>
+                    </div>
+                    <div class="slide-card">
+                        <span class="slide-number">${currentSlide + 1}</span>
+                        <span style="font-size:24px;color:rgb(31,41,55);line-height:1.6;">${sentences[currentSlide]}</span>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <button class="btn-secondary" onclick="prevSlide()" ${currentSlide === 0 ? 'disabled style="opacity:0.3"' : ''}>
+                        ← پێشوو
+                    </button>
+                    <button class="btn-secondary" onclick="nextSlide()" ${currentSlide === sentences.length - 1 ? 'disabled style="opacity:0.3"' : ''}>
+                        دواتر →
+                    </button>
+                    <button class="back-btn" onclick="slideMode=false;render()">گەڕانەوە بۆ لیست</button>
+                    <button class="btn-primary" onclick="reset()">یاری نوێ</button>
+                </div>
+            `;
+        }
+    }
+
+    function toggleHidden() {
+        isHidden = !isHidden;
+        render();
+    }
+
+    function addSentence() {
+        if (currentInput.trim()) {
+            sentences.push(currentInput.trim());
+            currentInput = '';
+            isHidden = true;
+            render();
+        }
+    }
+
+    function shuffle() {
+        for (let i = sentences.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [sentences[i], sentences[j]] = [sentences[j], sentences[i]];
+        }
+        showResults = true;
+        render();
+    }
+
+    function nextSlide() {
+        if (currentSlide < sentences.length - 1) {
+            currentSlide++;
+            render();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            render();
+        }
+    }
+
+    function reset() {
+        sentences = [];
+        currentInput = '';
+        isHidden = true;
+        showResults = false;
+        slideMode = false;
+        currentSlide = 0;
+        render();
+    }
+
+    render();
+</script>
+```
+
+</body>
+</html>
